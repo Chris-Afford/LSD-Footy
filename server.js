@@ -149,7 +149,10 @@ app.post('/api/admin/clubs', requireAdmin, upload.array('logos', 20), async (req
     await db.collection('games').doc(cleanSlug).set({
       homeTeam: { logo: '', goals: 0, behinds: 0 },
       awayTeam: { logo: '', goals: 0, behinds: 0 },
-      quarter: 1, clock: 0, clockRunning: false
+      quarter: 1,
+      clockBaseSeconds: 0,
+      clockStartedAt: null,
+      clockRunning: false
     });
 
     res.json({ ok: true, slug: cleanSlug });
@@ -222,7 +225,10 @@ app.post('/api/game/:slug/reset', requireClub, async (req, res) => {
     await db.collection('games').doc(req.params.slug).update({
       'homeTeam.goals': 0, 'homeTeam.behinds': 0,
       'awayTeam.goals': 0, 'awayTeam.behinds': 0,
-      quarter: 1, clock: 0, clockRunning: false
+      quarter: 1,
+      clockBaseSeconds: 0,
+      clockStartedAt: null,
+      clockRunning: false
     });
     res.json({ ok: true });
   } catch (e) {

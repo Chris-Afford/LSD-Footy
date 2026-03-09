@@ -25,10 +25,8 @@
     flex-direction: column;
     justify-content: center;
     padding: 0 80px;
-    gap: 0;
   }
 
-  /* Top accent bar */
   .top-bar {
     position: absolute;
     top: 0; left: 0; right: 0;
@@ -36,18 +34,18 @@
     background: linear-gradient(90deg, #e8192c 0%, #f5c800 100%);
   }
 
-  /* Quarter + Clock row */
+  /* Quarter + Clock */
   .meta-row {
     display: flex;
     align-items: baseline;
     justify-content: center;
-    gap: 48px;
-    margin-bottom: 36px;
+    gap: 56px;
+    margin-bottom: 30px;
   }
 
   .quarter-display {
-    font-weight: 800;
-    font-size: 100px;
+    font-weight: 900;
+    font-size: 130px;
     color: #f5c800;
     letter-spacing: 0.04em;
     line-height: 1;
@@ -55,113 +53,109 @@
 
   .clock-display {
     font-weight: 900;
-    font-size: 140px;
+    font-size: 160px;
     color: #f5c800;
     letter-spacing: 0.02em;
     line-height: 1;
     font-variant-numeric: tabular-nums;
-    min-width: 320px;
+    min-width: 380px;
     text-align: left;
   }
 
-  /* Divider between teams */
   .team-divider {
     height: 3px;
     background: rgba(255,255,255,0.1);
-    margin: 18px 0;
+    margin: 14px 0;
   }
 
-  /* Each team row: logo | scores pushed right */
   .team-row {
     display: flex;
     align-items: center;
-    gap: 60px;
+    gap: 50px;
   }
 
   .team-logo {
-    width: 220px;
-    height: 220px;
+    width: 280px;
+    height: 280px;
     object-fit: contain;
     flex-shrink: 0;
     filter: drop-shadow(0 4px 24px rgba(0,0,0,0.7));
   }
 
   .team-logo-placeholder {
-    width: 220px;
-    height: 220px;
+    width: 280px;
+    height: 280px;
     flex-shrink: 0;
   }
 
-  /* Score numbers fill remaining space */
   .score-group {
     display: flex;
     align-items: center;
     flex: 1;
     justify-content: flex-end;
-    gap: 0;
   }
 
   .score-goals {
     font-weight: 900;
-    font-size: 260px;
-    line-height: 0.9;
+    font-size: 300px;
+    line-height: 0.88;
     color: #fff;
     font-variant-numeric: tabular-nums;
-    min-width: 300px;
+    min-width: 340px;
     text-align: right;
   }
 
   .score-sep {
-    font-size: 180px;
+    font-size: 200px;
     color: rgba(255,255,255,0.2);
-    line-height: 0.9;
-    padding: 0 20px;
+    line-height: 0.88;
+    padding: 0 16px;
     font-weight: 300;
+    align-self: flex-end;
+    margin-bottom: 8px;
   }
 
   .score-behinds {
     font-weight: 900;
-    font-size: 260px;
-    line-height: 0.9;
+    font-size: 300px;
+    line-height: 0.88;
     color: #fff;
     font-variant-numeric: tabular-nums;
-    min-width: 300px;
+    min-width: 340px;
     text-align: center;
   }
 
   .score-total-wrap {
-    min-width: 340px;
+    min-width: 360px;
     text-align: right;
     border-left: 3px solid rgba(255,255,255,0.12);
-    margin-left: 30px;
-    padding-left: 40px;
+    margin-left: 24px;
+    padding-left: 36px;
   }
 
   .score-total {
     font-weight: 900;
-    font-size: 260px;
-    line-height: 0.9;
+    font-size: 300px;
+    line-height: 0.88;
     color: #fff;
     font-variant-numeric: tabular-nums;
   }
 
-  /* Score bump animation */
   @keyframes bump {
-    0%   { transform: scale(1);    color: #fff; }
-    40%  { transform: scale(1.1);  color: #f5c800; }
-    100% { transform: scale(1);    color: #fff; }
+    0%   { transform: scale(1);   color: #fff; }
+    40%  { transform: scale(1.08); color: #f5c800; }
+    100% { transform: scale(1);   color: #fff; }
   }
   .score-bump { animation: bump 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
-  /* Watermark */
   .watermark {
     position: absolute;
-    bottom: 28px;
-    right: 48px;
+    bottom: 24px;
+    right: 44px;
     display: flex;
     align-items: center;
     gap: 6px;
-    opacity: 0.45;
+    opacity: 0.4;
   }
   .watermark-live {
     background: #e8192c;
@@ -185,14 +179,12 @@
 <div class="scoreboard">
   <div class="top-bar"></div>
 
-  <!-- Quarter + Clock -->
   <div class="meta-row">
     <div class="quarter-display" id="quarter-display">Q1</div>
     <div class="clock-display" id="clock-display">0:00</div>
   </div>
 
-  <!-- Teams -->
-  <div id="home-team-row" class="team-row">
+  <div class="team-row">
     <div id="home-logo-wrap"><div class="team-logo-placeholder"></div></div>
     <div class="score-group">
       <div class="score-goals"   id="home-goals">0</div>
@@ -206,7 +198,7 @@
 
   <div class="team-divider"></div>
 
-  <div id="away-team-row" class="team-row">
+  <div class="team-row">
     <div id="away-logo-wrap"><div class="team-logo-placeholder"></div></div>
     <div class="score-group">
       <div class="score-goals"   id="away-goals">0</div>
@@ -227,11 +219,13 @@
 <script>
 (async function() {
   const slug = window.location.pathname.split('/')[1];
+  const MAX_CLOCK = 60 * 60; // hard stop at 60 minutes
   let clockInterval = null;
   let localClock = 0;
   let prev = {};
 
   function formatClock(s) {
+    s = Math.min(s, MAX_CLOCK);
     const m = Math.floor(s / 60);
     const sec = s % 60;
     return m + ':' + (sec < 10 ? '0' : '') + sec;
@@ -239,11 +233,9 @@
 
   function setLogo(wrapId, url) {
     const wrap = document.getElementById(wrapId);
-    if (url) {
-      wrap.innerHTML = '<img class="team-logo" src="' + url + '" alt="">';
-    } else {
-      wrap.innerHTML = '<div class="team-logo-placeholder"></div>';
-    }
+    wrap.innerHTML = url
+      ? '<img class="team-logo" src="' + url + '" alt="">'
+      : '<div class="team-logo-placeholder"></div>';
   }
 
   function bump(el) {
@@ -258,14 +250,13 @@
 
     // Quarter
     var qLabels = ['Q1','Q2','Q3','Q4'];
-    var q = Math.min((data.quarter || 1) - 1, 3);
-    document.getElementById('quarter-display').textContent = qLabels[q];
+    document.getElementById('quarter-display').textContent = qLabels[Math.min((data.quarter||1)-1, 3)];
 
     // Logos
     setLogo('home-logo-wrap', h.logo || '');
     setLogo('away-logo-wrap', a.logo || '');
 
-    // Scores with bump
+    // Scores
     var fields = [
       ['home-goals',   h.goals   || 0],
       ['home-behinds', h.behinds || 0],
@@ -281,19 +272,30 @@
       prev[f[0]] = f[1];
     });
 
-    // Clock
-    localClock = data.clock || 0;
+    // Clock — calculate true elapsed time server-side
     if (clockInterval) clearInterval(clockInterval);
-    if (data.clockRunning) {
-      clockInterval = setInterval(function() {
-        localClock++;
-        document.getElementById('clock-display').textContent = formatClock(localClock);
-      }, 1000);
+
+    if (data.clockRunning && data.clockStartedAt) {
+      // clockStartedAt is a Unix ms timestamp of when the clock was last started
+      // localClock = seconds already elapsed before this start + seconds since start
+      var elapsedSinceStart = Math.floor((Date.now() - data.clockStartedAt) / 1000);
+      localClock = Math.min((data.clockBaseSeconds || 0) + elapsedSinceStart, MAX_CLOCK);
+      document.getElementById('clock-display').textContent = formatClock(localClock);
+
+      if (localClock < MAX_CLOCK) {
+        clockInterval = setInterval(function() {
+          localClock++;
+          document.getElementById('clock-display').textContent = formatClock(localClock);
+          if (localClock >= MAX_CLOCK) clearInterval(clockInterval);
+        }, 1000);
+      }
+    } else {
+      // Clock stopped — show saved value
+      localClock = Math.min(data.clockBaseSeconds || 0, MAX_CLOCK);
+      document.getElementById('clock-display').textContent = formatClock(localClock);
     }
-    document.getElementById('clock-display').textContent = formatClock(localClock);
   }
 
-  // Init Firebase
   const cfgRes = await fetch('/api/firebase-config');
   const firebaseConfig = await cfgRes.json();
   const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js');

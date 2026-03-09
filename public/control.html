@@ -530,6 +530,22 @@
     margin-top: 10px;
     display: none;
   }
+
+  /* ── Mobile responsive ───────────────────────────────────── */
+  @media (max-width: 600px) {
+    main { padding: 12px; }
+    .header { padding: 12px 16px; }
+    .header-brand { font-size: 17px; }
+    .header-club { font-size: 13px; }
+    .clock-display { font-size: 60px; padding: 10px 0; }
+    .teams-grid { grid-template-columns: 1fr !important; }
+    .score-val { font-size: 28px; }
+    .team-total { font-size: 38px; }
+    .btn-adj { width: 48px; height: 48px; font-size: 24px; }
+    .settings-grid { grid-template-columns: 1fr !important; }
+    .login-box { width: 90vw; padding: 24px 20px; }
+    .login-box input { font-size: 18px; }
+  }
 </style>
 </head>
 <body>
@@ -820,18 +836,24 @@
     if (h.logo && homeSel.value !== h.logo) { homeSel.value = h.logo; updateLogoPreview('home-logo-select'); }
     if (a.logo && awaySel.value !== a.logo) { awaySel.value = a.logo; updateLogoPreview('away-logo-select'); }
 
-    // Clock
-    localClock = s.clock || 0;
-    var running = s.clockRunning || false;
+    // Clock — derived from server timestamps so it survives page reloads
     if (clockInterval) clearInterval(clockInterval);
-    if (running) {
-      clockInterval = setInterval(function() {
-        localClock++;
-        document.getElementById('clock-display').textContent = formatClock(localClock);
-      }, 1000);
+    var MAX_CLOCK = 3600;
+    var running = s.clockRunning || false;
+    if (running && s.clockStartedAt) {
+      var elapsedSince = Math.floor((Date.now() - s.clockStartedAt) / 1000);
+      localClock = Math.min((s.clockBaseSeconds || 0) + elapsedSince, MAX_CLOCK);
+      if (localClock < MAX_CLOCK) {
+        clockInterval = setInterval(function() {
+          localClock++;
+          document.getElementById('clock-display').textContent = formatClock(localClock);
+          if (localClock >= MAX_CLOCK) clearInterval(clockInterval);
+        }, 1000);
+      }
       document.getElementById('btn-start').style.display = 'none';
       document.getElementById('btn-stop').style.display = '';
     } else {
+      localClock = Math.min(s.clockBaseSeconds || 0, MAX_CLOCK);
       document.getElementById('btn-start').style.display = '';
       document.getElementById('btn-stop').style.display = 'none';
     }
@@ -881,17 +903,27 @@
   window.setQuarter = async function(q) { await patchGame({ quarter: q }); };
 
   window.startClock = async function() {
-    await patchGame({ clockRunning: true, clock: localClock });
+    // Store current base + server timestamp of when we pressed start
+    await patchGame({
+      clockRunning: true,
+      clockBaseSeconds: localClock,
+      clockStartedAt: Date.now()
+    });
   };
 
   window.stopClock = async function() {
-    await patchGame({ clockRunning: false, clock: localClock });
+    // Save how far we got as the new base
+    await patchGame({
+      clockRunning: false,
+      clockBaseSeconds: localClock,
+      clockStartedAt: null
+    });
   };
 
   window.resetClock = async function() {
     if (clockInterval) clearInterval(clockInterval);
     localClock = 0;
-    await patchGame({ clockRunning: false, clock: 0 });
+    await patchGame({ clockRunning: false, clockBaseSeconds: 0, clockStartedAt: null });
   };
 
   window.applySettings = async function() {
