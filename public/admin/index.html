@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin – LiveSourceData</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red: #e8192c;
+    --yellow: #f5c800;
+    --green: #22c55e;
+    --dark: #0a0a0a;
+    --mid: #141414;
+    --card: #1a1a1a;
+    --border: rgba(255,255,255,0.07);
+    --muted: rgba(255,255,255,0.4);
+  }
+
+  body {
+    background: var(--dark);
+    color: #fff;
+    font-family: 'Barlow', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+
+  .topbar { height: 3px; background: linear-gradient(90deg, var(--red), var(--yellow)); }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--mid);
+  }
+
+  .header-brand {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 22px;
+    text-transform: uppercase;
+  }
+
+  .header-brand span { color: var(--yellow); }
+
+  .header-badge {
+    background: var(--red);
+    color: white;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 3px;
+  }
+
+  .btn-sm {
+    padding: 7px 14px;
+    border-radius: 4px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+  .btn-sm:hover { color: white; border-color: rgba(255,255,255,0.2); }
+
+  main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 28px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::before {
+    content: '';
+    display: block;
+    width: 3px;
+    height: 14px;
+    background: var(--yellow);
+    border-radius: 2px;
+  }
+
+  .card-body { padding: 20px; }
+
+  /* Form */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    align-items: end;
+  }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  input[type="text"], input[type="password"], input[type="file"] {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 10px 12px;
+    color: white;
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input:focus { border-color: var(--yellow); }
+
+  input[type="file"] {
+    padding: 8px 10px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .btn-primary {
+    padding: 11px 20px;
+    border: none;
+    border-radius: 5px;
+    background: var(--yellow);
+    color: #000;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    width: 100%;
+    transition: opacity 0.15s;
+  }
+
+  .btn-primary:hover { opacity: 0.9; }
+
+  .form-note {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 12px;
+  }
+
+  .form-error {
+    color: var(--red);
+    font-size: 13px;
+    margin-top: 10px;
+    display: none;
+  }
+
+  /* Clubs table */
+  .clubs-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .clubs-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .clubs-table td {
+    padding: 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 14px;
+    vertical-align: middle;
+  }
+
+  .clubs-table tr:last-child td { border-bottom: none; }
+  .clubs-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .club-slug-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--yellow);
+  }
+
+  .table-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .btn-link {
+    color: rgba(255,255,255,0.5);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.08);
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .btn-link:hover { color: white; border-color: rgba(255,255,255,0.2); }
+
+  .btn-delete {
+    color: rgba(232,25,44,0.6);
+    border-color: rgba(232,25,44,0.15);
+    background: transparent;
+    cursor: pointer;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid rgba(232,25,44,0.15);
+    transition: all 0.15s;
+  }
+
+  .btn-delete:hover { color: var(--red); border-color: var(--red); background: rgba(232,25,44,0.08); }
+
+  .logo-thumbs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .logo-thumb {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  /* Logos modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 50;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .modal h3 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .logo-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .logo-item {
+    position: relative;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px;
+    text-align: center;
+  }
+
+  .logo-item img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+  }
+
+  .logo-item-name {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+    word-break: break-all;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .btn-remove-logo {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--red);
+    border: none;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  .modal-footer {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+
+  .btn-close {
+    padding: 10px 18px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  /* Auth overlay */
+  #auth-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--dark);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .login-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 36px;
+    width: 340px;
+    text-align: center;
+  }
+
+  .login-box h2 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 24px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .login-box p { color: var(--muted); font-size: 13px; margin-bottom: 22px; }
+
+  .login-box input {
+    margin-bottom: 14px;
+    text-align: center;
+    font-size: 22px;
+    letter-spacing: 0.2em;
+    padding: 14px;
+  }
+
+  .btn-primary-full {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 6px;
+    background: var(--yellow);
+    color: #000;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .login-error { color: var(--red); font-size: 13px; margin-top: 10px; display: none; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: rgba(34,197,94,0.15);
+    border: 1px solid rgba(34,197,94,0.3);
+    color: var(--green);
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    pointer-events: none;
+    z-index: 999;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div id="auth-overlay">
+  <div class="login-box">
+    <h2>Admin Login</h2>
+    <p>LiveSourceData – AFL Scoreboard</p>
+    <input type="password" id="admin-pw" placeholder="••••••">
+    <button class="btn-primary-full" onclick="doAdminLogin()">Login →</button>
+    <div class="login-error" id="login-err"></div>
+  </div>
+</div>
+
+<div class="topbar"></div>
+<div class="header">
+  <div class="header-brand">Live<span>Source</span>Data</div>
+  <div class="header-badge">Admin</div>
+  <button class="btn-sm" onclick="logout()">Logout</button>
+</div>
+
+<main>
+  <!-- Add Club -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Add New Club</div>
+    </div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="field">
+          <label>Club Name</label>
+          <input type="text" id="new-name" placeholder="e.g. Sturt Football Club">
+        </div>
+        <div class="field">
+          <label>URL Slug</label>
+          <input type="text" id="new-slug" placeholder="e.g. sturt">
+        </div>
+        <div class="field">
+          <label>Access Code (password)</label>
+          <input type="password" id="new-password" placeholder="Min 4 characters">
+        </div>
+      </div>
+      <div class="field" style="margin-top:16px">
+        <label>Upload Logos (PNG/SVG recommended, multiple ok)</label>
+        <input type="file" id="new-logos" accept="image/*" multiple>
+      </div>
+      <button class="btn-primary" style="margin-top:16px; max-width:220px" onclick="addClub()">+ Add Club</button>
+      <div class="form-error" id="add-error"></div>
+      <p class="form-note">The slug becomes the URL: /sturt/live and /sturt/control</p>
+    </div>
+  </div>
+
+  <!-- Clubs list -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Clubs</div>
+    </div>
+    <div id="clubs-wrap">
+      <div class="empty-state">Loading clubs…</div>
+    </div>
+  </div>
+</main>
+
+<!-- Logo manager modal -->
+<div class="modal-overlay" id="logo-modal">
+  <div class="modal">
+    <h3>Manage Logos – <span id="modal-club-name"></span></h3>
+    <div class="logo-grid" id="modal-logo-grid"></div>
+    <div class="modal-footer">
+      <input type="file" id="modal-logo-upload" accept="image/*" style="flex:1;font-size:12px">
+      <button class="btn-primary" style="width:auto;padding:10px 16px" onclick="uploadModalLogo()">Upload</button>
+      <button class="btn-close" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let currentModalSlug = null;
+
+async function checkAuth() {
+  const res = await fetch('/api/admin/check');
+  const data = await res.json();
+  if (data.isAdmin) {
+    document.getElementById('auth-overlay').style.display = 'none';
+    loadClubs();
+  }
+}
+
+async function doAdminLogin() {
+  const pw = document.getElementById('admin-pw').value;
+  const err = document.getElementById('login-err');
+  err.style.display = 'none';
+  const res = await fetch('/api/admin/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: pw })
+  });
+  const data = await res.json();
+  if (!res.ok) { err.textContent = data.error; err.style.display = 'block'; return; }
+  if (data.firstRun) {
+    alert(`First run! Your admin password hash is:\n\n${data.hash}\n\nAdd this as ADMIN_PASSWORD_HASH in your .env file on Render.`);
+  }
+  document.getElementById('auth-overlay').style.display = 'none';
+  loadClubs();
+}
+
+document.getElementById('admin-pw').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doAdminLogin();
+});
+
+// Auto-generate slug from name
+document.getElementById('new-name').addEventListener('input', e => {
+  const slugField = document.getElementById('new-slug');
+  if (!slugField._edited) {
+    slugField.value = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+});
+document.getElementById('new-slug').addEventListener('input', () => {
+  document.getElementById('new-slug')._edited = true;
+});
+
+async function loadClubs() {
+  const res = await fetch('/api/admin/clubs');
+  if (!res.ok) return;
+  const clubs = await res.json();
+  const wrap = document.getElementById('clubs-wrap');
+
+  if (!clubs.length) {
+    wrap.innerHTML = '<div class="empty-state">No clubs yet. Add one above.</div>';
+    return;
+  }
+
+  let html = `<table class="clubs-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Slug / URL</th>
+        <th>Logos</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  for (const club of clubs) {
+    const logoThumbs = (club.logos || []).slice(0, 4).map(l =>
+      `<img class="logo-thumb" src="${l}" alt="">`
+    ).join('');
+
+    html += `<tr>
+      <td><strong>${escHtml(club.name)}</strong></td>
+      <td><span class="club-slug-badge">/${club.slug}/</span></td>
+      <td><div class="logo-thumbs">${logoThumbs}${(club.logos||[]).length > 4 ? `<span style="color:var(--muted);font-size:12px;align-self:center">+${club.logos.length-4} more</span>` : ''}</div></td>
+      <td>
+        <div class="table-actions">
+          <a class="btn-link" href="/${club.slug}/live" target="_blank">👁 Live</a>
+          <button class="btn-link" onclick="openLogoModal('${club.slug}', '${escHtml(club.name)}')">🖼 Logos</button>
+          <button class="btn-delete" onclick="deleteClub('${club.slug}', '${escHtml(club.name)}')">Delete</button>
+        </div>
+      </td>
+    </tr>`;
+  }
+
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+async function addClub() {
+  const name = document.getElementById('new-name').value.trim();
+  const slug = document.getElementById('new-slug').value.trim().toLowerCase();
+  const password = document.getElementById('new-password').value;
+  const logoFiles = document.getElementById('new-logos').files;
+  const err = document.getElementById('add-error');
+  err.style.display = 'none';
+
+  if (!name || !slug || !password) {
+    err.textContent = 'Name, slug, and password are required.';
+    err.style.display = 'block';
+    return;
+  }
+
+  if (password.length < 4) {
+    err.textContent = 'Password must be at least 4 characters.';
+    err.style.display = 'block';
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('name', name);
+  formData.append('slug', slug);
+  formData.append('password', password);
+  for (const file of logoFiles) {
+    formData.append('logos', file);
+  }
+
+  const res = await fetch('/api/admin/clubs', { method: 'POST', body: formData });
+  const data = await res.json();
+  if (!res.ok) { err.textContent = data.error; err.style.display = 'block'; return; }
+
+  document.getElementById('new-name').value = '';
+  document.getElementById('new-slug').value = '';
+  document.getElementById('new-password').value = '';
+  document.getElementById('new-logos').value = '';
+  document.getElementById('new-slug')._edited = false;
+  showToast('Club added!');
+  loadClubs();
+}
+
+async function deleteClub(slug, name) {
+  if (!confirm(`Delete "${name}"? This will remove all their game data and cannot be undone.`)) return;
+  const res = await fetch(`/api/admin/clubs/${slug}`, { method: 'DELETE' });
+  if (res.ok) { showToast('Club deleted'); loadClubs(); }
+}
+
+async function openLogoModal(slug, name) {
+  currentModalSlug = slug;
+  document.getElementById('modal-club-name').textContent = name;
+  document.getElementById('logo-modal').classList.add('open');
+  await refreshModalLogos(slug);
+}
+
+async function refreshModalLogos(slug) {
+  const res = await fetch(`/api/club/${slug}`);
+  const club = await res.json();
+  const grid = document.getElementById('modal-logo-grid');
+
+  if (!(club.logos || []).length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;color:var(--muted);font-size:13px">No logos yet</div>';
+    return;
+  }
+
+  grid.innerHTML = club.logos.map(path => `
+    <div class="logo-item">
+      <button class="btn-remove-logo" onclick="removeLogo('${path}')" title="Remove">×</button>
+      <img src="${path}" alt="">
+      <div class="logo-item-name">${path.split('/').pop()}</div>
+    </div>
+  `).join('');
+}
+
+async function uploadModalLogo() {
+  const fileInput = document.getElementById('modal-logo-upload');
+  if (!fileInput.files.length) return;
+  const formData = new FormData();
+  formData.append('logo', fileInput.files[0]);
+  const res = await fetch(`/api/admin/clubs/${currentModalSlug}/upload-logo`, {
+    method: 'POST', body: formData
+  });
+  if (res.ok) {
+    fileInput.value = '';
+    showToast('Logo uploaded');
+    refreshModalLogos(currentModalSlug);
+    loadClubs();
+  }
+}
+
+async function removeLogo(logoPath) {
+  if (!confirm('Remove this logo?')) return;
+  await fetch(`/api/admin/clubs/${currentModalSlug}/logo`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ logoPath })
+  });
+  refreshModalLogos(currentModalSlug);
+  loadClubs();
+}
+
+function closeModal() {
+  document.getElementById('logo-modal').classList.remove('open');
+  currentModalSlug = null;
+}
+
+async function logout() {
+  await fetch('/api/admin/logout', { method: 'POST' });
+  window.location.href = '/';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+checkAuth();
+</script>
+</body>
+</html>

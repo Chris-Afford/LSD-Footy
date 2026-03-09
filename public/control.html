@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control Panel – LiveSourceData</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red: #e8192c;
+    --yellow: #f5c800;
+    --green: #22c55e;
+    --dark: #0a0a0a;
+    --mid: #141414;
+    --card: #1a1a1a;
+    --border: rgba(255,255,255,0.07);
+    --text: #ffffff;
+    --muted: rgba(255,255,255,0.4);
+  }
+
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+
+  /* Top bar */
+  .topbar {
+    height: 3px;
+    background: linear-gradient(90deg, var(--red), var(--yellow));
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--mid);
+  }
+
+  .header-brand {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 22px;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+  }
+
+  .header-brand span { color: var(--yellow); }
+
+  .header-club {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .live-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: blink 1.5s ease-in-out infinite;
+  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .btn-sm {
+    padding: 7px 14px;
+    border-radius: 4px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    text-decoration: none;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .btn-sm:hover { color: white; border-color: rgba(255,255,255,0.2); }
+
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::before {
+    content: '';
+    display: block;
+    width: 3px;
+    height: 14px;
+    background: var(--yellow);
+    border-radius: 2px;
+  }
+
+  .card-body { padding: 20px; }
+
+  /* Clock section */
+  .clock-display {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 80px;
+    text-align: center;
+    letter-spacing: 0.02em;
+    color: var(--yellow);
+    line-height: 1;
+    padding: 20px 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .clock-controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 12px;
+  }
+
+  .btn-clock {
+    flex: 1;
+    max-width: 180px;
+    padding: 16px;
+    border-radius: 8px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+
+  .btn-clock:active { transform: scale(0.97); }
+
+  .btn-start {
+    background: var(--green);
+    color: #000;
+  }
+
+  .btn-stop {
+    background: var(--red);
+    color: white;
+  }
+
+  .btn-reset-clock {
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.5);
+    border: 1px solid var(--border) !important;
+  }
+
+  /* Quarter selector */
+  .quarter-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+  }
+
+  .btn-quarter {
+    padding: 14px 8px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .btn-quarter:hover { border-color: rgba(255,255,255,0.2); color: white; }
+
+  .btn-quarter.active {
+    background: var(--yellow);
+    border-color: var(--yellow);
+    color: #000;
+  }
+
+  /* Scoring section */
+  .teams-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .team-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+  .team-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .team-label-home { color: #60a5fa; }
+  .team-label-away { color: #f87171; }
+
+  .team-total {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 48px;
+    line-height: 1;
+    text-align: center;
+    margin: 10px 0;
+  }
+
+  .score-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .score-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .score-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    width: 60px;
+  }
+
+  .score-counter {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex: 1;
+  }
+
+  .btn-adj {
+    width: 44px;
+    height: 44px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.06);
+    color: white;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.1s;
+    flex-shrink: 0;
+  }
+
+  .btn-adj:active { transform: scale(0.92); }
+
+  .btn-adj.plus {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.3);
+    color: var(--green);
+  }
+
+  .btn-adj.plus:hover {
+    background: rgba(34, 197, 94, 0.3);
+  }
+
+  .btn-adj.minus {
+    background: rgba(232, 25, 44, 0.1);
+    border-color: rgba(232, 25, 44, 0.2);
+    color: rgba(255,255,255,0.5);
+  }
+
+  .btn-adj.minus:hover {
+    background: rgba(232, 25, 44, 0.2);
+    color: var(--red);
+  }
+
+  .score-val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 32px;
+    min-width: 60px;
+    text-align: center;
+    line-height: 1;
+  }
+
+  /* Game settings */
+  .settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .field { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  input[type="text"], select {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 10px 12px;
+    color: white;
+    font-family: 'Barlow', sans-serif;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+
+  select option { background: #1a1a1a; }
+  input:focus, select:focus { border-color: var(--yellow); }
+
+  .logo-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .logo-preview img {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.05);
+  }
+
+  .btn-apply {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 6px;
+    background: var(--yellow);
+    color: #000;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    margin-top: 20px;
+  }
+
+  .btn-apply:hover { opacity: 0.9; }
+  .btn-apply:active { transform: scale(0.98); }
+
+  /* Reset button */
+  .btn-danger {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid rgba(232, 25, 44, 0.3);
+    border-radius: 6px;
+    background: rgba(232, 25, 44, 0.08);
+    color: var(--red);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 10px;
+  }
+
+  .btn-danger:hover {
+    background: rgba(232, 25, 44, 0.15);
+    border-color: var(--red);
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: rgba(34,197,94,0.15);
+    border: 1px solid rgba(34,197,94,0.3);
+    color: var(--green);
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  #auth-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--dark);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .login-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 36px;
+    width: 360px;
+    text-align: center;
+  }
+
+  .login-box h2 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 24px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+
+  .login-box p {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+
+  .login-box input {
+    margin-bottom: 14px;
+    text-align: center;
+    font-size: 24px;
+    letter-spacing: 0.2em;
+    padding: 14px;
+  }
+
+  .login-box .btn-primary {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 6px;
+    background: var(--yellow);
+    color: #000;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .login-error {
+    color: var(--red);
+    font-size: 13px;
+    margin-top: 10px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<!-- Auth overlay shown if not logged in -->
+<div id="auth-overlay">
+  <div class="login-box">
+    <h2 id="login-title">Club Login</h2>
+    <p id="login-sub">Enter your access code to continue</p>
+    <input type="password" id="login-password" placeholder="••••••" autocomplete="current-password">
+    <button class="btn-primary" onclick="doLogin()">Unlock →</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<div class="topbar"></div>
+<div class="header">
+  <div class="header-brand">Live<span>Source</span>Data</div>
+  <div class="header-club">
+    <div class="live-dot"></div>
+    <span id="club-name-header">Loading…</span>
+  </div>
+  <div class="header-actions">
+    <a id="live-link" href="#" class="btn-sm" target="_blank">👁 View Live</a>
+    <button class="btn-sm" onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<main>
+  <!-- Clock -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Game Clock</div>
+    </div>
+    <div class="card-body">
+      <div class="clock-display" id="clock-display">0:00</div>
+      <div class="clock-controls">
+        <button class="btn-clock btn-start" id="btn-start" onclick="startClock()">▶ Start</button>
+        <button class="btn-clock btn-stop" id="btn-stop" onclick="stopClock()" style="display:none">⏹ Stop</button>
+        <button class="btn-clock btn-reset-clock" onclick="resetClock()" style="border:none">↺ Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quarter -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Quarter</div>
+    </div>
+    <div class="card-body">
+      <div class="quarter-grid">
+        <button class="btn-quarter active" id="q-1" onclick="setQuarter(1)">Q1</button>
+        <button class="btn-quarter" id="q-2" onclick="setQuarter(2)">Q2</button>
+        <button class="btn-quarter" id="q-3" onclick="setQuarter(3)">Q3</button>
+        <button class="btn-quarter" id="q-4" onclick="setQuarter(4)">Q4</button>
+        <button class="btn-quarter" id="q-5" onclick="setQuarter(5)">ET</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scores -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Scores</div>
+    </div>
+    <div class="card-body">
+      <div class="teams-grid">
+        <!-- Home -->
+        <div class="team-card">
+          <div class="team-label team-label-home" id="home-label">HOME</div>
+          <div class="team-total" id="home-total-ctrl">0</div>
+          <div class="score-row">
+            <div class="score-item">
+              <div class="score-label">Goals</div>
+              <div class="score-counter">
+                <button class="btn-adj minus" onclick="adjust('home','goals',-1)">−</button>
+                <div class="score-val" id="home-goals-ctrl">0</div>
+                <button class="btn-adj plus" onclick="adjust('home','goals',1)">+</button>
+              </div>
+            </div>
+            <div class="score-item">
+              <div class="score-label">Behinds</div>
+              <div class="score-counter">
+                <button class="btn-adj minus" onclick="adjust('home','behinds',-1)">−</button>
+                <div class="score-val" id="home-behinds-ctrl">0</div>
+                <button class="btn-adj plus" onclick="adjust('home','behinds',1)">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Away -->
+        <div class="team-card">
+          <div class="team-label team-label-away" id="away-label">AWAY</div>
+          <div class="team-total" id="away-total-ctrl">0</div>
+          <div class="score-row">
+            <div class="score-item">
+              <div class="score-label">Goals</div>
+              <div class="score-counter">
+                <button class="btn-adj minus" onclick="adjust('away','goals',-1)">−</button>
+                <div class="score-val" id="away-goals-ctrl">0</div>
+                <button class="btn-adj plus" onclick="adjust('away','goals',1)">+</button>
+              </div>
+            </div>
+            <div class="score-item">
+              <div class="score-label">Behinds</div>
+              <div class="score-counter">
+                <button class="btn-adj minus" onclick="adjust('away','behinds',-1)">−</button>
+                <div class="score-val" id="away-behinds-ctrl">0</div>
+                <button class="btn-adj plus" onclick="adjust('away','behinds',1)">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Settings -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Game Settings</div>
+    </div>
+    <div class="card-body">
+      <div class="settings-grid">
+        <div>
+          <div class="field">
+            <label>Home Team Name</label>
+            <input type="text" id="home-name-input" placeholder="e.g. Sturt">
+          </div>
+          <div class="field" style="margin-top:14px">
+            <label>Home Team Logo</label>
+            <select id="home-logo-select">
+              <option value="">— No logo —</option>
+            </select>
+            <div class="logo-preview" id="home-logo-preview"></div>
+          </div>
+        </div>
+        <div>
+          <div class="field">
+            <label>Away Team Name</label>
+            <input type="text" id="away-name-input" placeholder="e.g. Glenelg">
+          </div>
+          <div class="field" style="margin-top:14px">
+            <label>Away Team Logo</label>
+            <select id="away-logo-select">
+              <option value="">— No logo —</option>
+            </select>
+            <div class="logo-preview" id="away-logo-preview"></div>
+          </div>
+        </div>
+      </div>
+      <button class="btn-apply" onclick="applySettings()">Apply Settings to Scoreboard</button>
+      <button class="btn-danger" onclick="resetGame()">⚠ Reset All Scores to Zero</button>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast">Saved</div>
+
+<script type="module">
+  const slug = window.location.pathname.split('/')[1];
+  let gameState = {};
+  let clockInterval = null;
+  let localClock = 0;
+  let isRunning = false;
+  let logos = [];
+
+  // ── Auth check ──────────────────────────────────────────────────────────────
+  const authRes = await fetch(`/api/club/check/${slug}`);
+  const { authed } = await authRes.json();
+  if (authed) {
+    document.getElementById('auth-overlay').style.display = 'none';
+    init();
+  } else {
+    document.getElementById('login-title').textContent = slug.toUpperCase();
+  }
+
+  window.doLogin = async function() {
+    const password = document.getElementById('login-password').value;
+    const err = document.getElementById('login-error');
+    err.style.display = 'none';
+    const res = await fetch('/api/club/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug, password })
+    });
+    const data = await res.json();
+    if (!res.ok) { err.textContent = data.error; err.style.display = 'block'; return; }
+    document.getElementById('auth-overlay').style.display = 'none';
+    init();
+  };
+
+  document.getElementById('login-password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') window.doLogin();
+  });
+
+  // ── Firebase real-time ──────────────────────────────────────────────────────
+  const cfgRes = await fetch('/api/firebase-config');
+  const firebaseConfig = await cfgRes.json();
+  const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js');
+  const { getFirestore, doc, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js');
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  async function init() {
+    // Load club info
+    const clubRes = await fetch(`/api/club/${slug}`);
+    const club = await clubRes.json();
+    document.getElementById('club-name-header').textContent = club.name || slug;
+    document.getElementById('live-link').href = `/${slug}/live`;
+    logos = club.logos || [];
+
+    // Populate logo dropdowns
+    const selects = ['home-logo-select', 'away-logo-select'];
+    selects.forEach(id => {
+      const sel = document.getElementById(id);
+      logos.forEach(path => {
+        const opt = document.createElement('option');
+        opt.value = path;
+        opt.textContent = path.split('/').pop().replace(/\.[^.]+$/, '').replace(/-\w{8}$/, '');
+        sel.appendChild(opt);
+      });
+      sel.addEventListener('change', () => updateLogoPreview(id));
+    });
+
+    // Listen to game state
+    onSnapshot(doc(db, 'games', slug), snap => {
+      if (!snap.exists()) return;
+      gameState = snap.data();
+      renderState(gameState);
+    });
+  }
+
+  function formatClock(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2,'0')}`;
+  }
+
+  function renderState(s) {
+    const h = s.homeTeam || {};
+    const a = s.awayTeam || {};
+
+    document.getElementById('home-goals-ctrl').textContent = h.goals || 0;
+    document.getElementById('home-behinds-ctrl').textContent = h.behinds || 0;
+    document.getElementById('home-total-ctrl').textContent = (h.goals||0)*6+(h.behinds||0);
+    document.getElementById('away-goals-ctrl').textContent = a.goals || 0;
+    document.getElementById('away-behinds-ctrl').textContent = a.behinds || 0;
+    document.getElementById('away-total-ctrl').textContent = (a.goals||0)*6+(a.behinds||0);
+
+    if (h.name) {
+      document.getElementById('home-label').textContent = h.name.toUpperCase();
+      document.getElementById('home-name-input').value = h.name;
+    }
+    if (a.name) {
+      document.getElementById('away-label').textContent = a.name.toUpperCase();
+      document.getElementById('away-name-input').value = a.name;
+    }
+
+    // Quarter buttons
+    const q = s.quarter || 1;
+    for (let i = 1; i <= 5; i++) {
+      document.getElementById(`q-${i}`).classList.toggle('active', i === q);
+    }
+
+    // Logo selects
+    if (h.logo) document.getElementById('home-logo-select').value = h.logo;
+    if (a.logo) document.getElementById('away-logo-select').value = a.logo;
+    updateLogoPreview('home-logo-select');
+    updateLogoPreview('away-logo-select');
+
+    // Clock
+    localClock = s.clock || 0;
+    isRunning = s.clockRunning || false;
+    if (clockInterval) clearInterval(clockInterval);
+    if (isRunning) {
+      clockInterval = setInterval(() => {
+        localClock++;
+        document.getElementById('clock-display').textContent = formatClock(localClock);
+      }, 1000);
+      document.getElementById('btn-start').style.display = 'none';
+      document.getElementById('btn-stop').style.display = '';
+    } else {
+      document.getElementById('btn-start').style.display = '';
+      document.getElementById('btn-stop').style.display = 'none';
+    }
+    document.getElementById('clock-display').textContent = formatClock(localClock);
+  }
+
+  function updateLogoPreview(selectId) {
+    const val = document.getElementById(selectId).value;
+    const previewId = selectId.replace('-select', '-preview');
+    const preview = document.getElementById(previewId);
+    preview.innerHTML = val ? `<img src="${val}" alt="logo">` : '';
+  }
+
+  async function patchGame(data) {
+    await fetch(`/api/game/${slug}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+  }
+
+  function showToast(msg = 'Saved') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  }
+
+  // Expose functions to global scope
+  window.adjust = async function(team, field, delta) {
+    const key = `${team}Team.${field}`;
+    const current = (gameState[`${team}Team`] || {})[field] || 0;
+    const newVal = Math.max(0, current + delta);
+    await patchGame({ [key]: newVal });
+  };
+
+  window.setQuarter = async function(q) {
+    await patchGame({ quarter: q });
+  };
+
+  window.startClock = async function() {
+    await patchGame({ clockRunning: true, clock: localClock });
+  };
+
+  window.stopClock = async function() {
+    await patchGame({ clockRunning: false, clock: localClock });
+  };
+
+  window.resetClock = async function() {
+    if (clockInterval) clearInterval(clockInterval);
+    localClock = 0;
+    await patchGame({ clockRunning: false, clock: 0 });
+  };
+
+  window.applySettings = async function() {
+    await patchGame({
+      'homeTeam.name': document.getElementById('home-name-input').value.trim(),
+      'homeTeam.logo': document.getElementById('home-logo-select').value,
+      'awayTeam.name': document.getElementById('away-name-input').value.trim(),
+      'awayTeam.logo': document.getElementById('away-logo-select').value,
+    });
+    showToast('Settings applied!');
+  };
+
+  window.resetGame = async function() {
+    if (!confirm('Reset all scores to zero? This cannot be undone.')) return;
+    await fetch(`/api/game/${slug}/reset`, { method: 'POST' });
+    showToast('Scores reset');
+  };
+
+  window.logout = async function() {
+    await fetch('/api/club/logout', { method: 'POST' });
+    window.location.href = '/';
+  };
+</script>
+</body>
+</html>

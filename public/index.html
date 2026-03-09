@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LiveSourceData – AFL Scoreboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red: #e8192c;
+    --yellow: #f5c800;
+    --white: #ffffff;
+    --off-white: #e8e4dc;
+    --dark: #0a0a0a;
+    --mid: #1a1a1a;
+    --border: rgba(255,255,255,0.08);
+  }
+
+  body {
+    background: var(--dark);
+    color: var(--white);
+    font-family: 'Barlow', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+  }
+
+  /* Red accent bar */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--red), var(--yellow));
+  }
+
+  .brand {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .brand-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--red);
+    color: white;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 2px;
+    margin-bottom: 16px;
+  }
+
+  .brand-tag::before {
+    content: '●';
+    font-size: 7px;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .brand h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 52px;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .brand h1 span { color: var(--yellow); }
+
+  .brand p {
+    margin-top: 10px;
+    color: rgba(255,255,255,0.4);
+    font-size: 14px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .card {
+    background: var(--mid);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 40px;
+    width: 100%;
+    max-width: 420px;
+    position: relative;
+  }
+
+  .card-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 28px;
+    color: var(--off-white);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-title::before {
+    content: '';
+    display: block;
+    width: 4px;
+    height: 20px;
+    background: var(--yellow);
+    border-radius: 2px;
+  }
+
+  .field {
+    margin-bottom: 18px;
+  }
+
+  label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 8px;
+  }
+
+  input[type="text"], input[type="password"] {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 5px;
+    padding: 12px 14px;
+    color: white;
+    font-family: 'Barlow', sans-serif;
+    font-size: 15px;
+    transition: border-color 0.2s, background 0.2s;
+    outline: none;
+  }
+
+  input:focus {
+    border-color: var(--yellow);
+    background: rgba(255,255,255,0.08);
+  }
+
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 5px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+    margin-top: 8px;
+  }
+
+  .btn:active { transform: scale(0.98); }
+
+  .btn-primary {
+    background: var(--yellow);
+    color: var(--dark);
+  }
+
+  .btn-primary:hover { opacity: 0.9; }
+
+  .error {
+    color: var(--red);
+    font-size: 13px;
+    margin-top: 12px;
+    display: none;
+  }
+
+  .divider {
+    text-align: center;
+    margin: 32px 0;
+    color: rgba(255,255,255,0.15);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    position: relative;
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 40%;
+    height: 1px;
+    background: rgba(255,255,255,0.08);
+  }
+
+  .divider::before { left: 0; }
+  .divider::after { right: 0; }
+
+  .admin-link {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.3);
+  }
+
+  .admin-link a {
+    color: rgba(255,255,255,0.5);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    transition: color 0.2s;
+  }
+
+  .admin-link a:hover { color: white; }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 28px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 6px;
+    padding: 4px;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 8px;
+    text-align: center;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 4px;
+    color: rgba(255,255,255,0.4);
+    transition: all 0.2s;
+    border: none;
+    background: transparent;
+  }
+
+  .tab.active {
+    background: var(--red);
+    color: white;
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+</style>
+</head>
+<body>
+
+<div class="brand">
+  <div class="brand-tag">Live Scoring</div>
+  <h1>Live<span>Source</span>Data</h1>
+  <p>AFL Scoreboard System</p>
+</div>
+
+<div class="card">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('club')">Club Login</button>
+    <button class="tab" onclick="switchTab('admin')">Admin</button>
+  </div>
+
+  <!-- Club Login -->
+  <div class="tab-panel active" id="tab-club">
+    <div class="field">
+      <label>Club Name / Slug</label>
+      <input type="text" id="club-slug" placeholder="e.g. sturt" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Access Code</label>
+      <input type="password" id="club-password" placeholder="••••••">
+    </div>
+    <button class="btn btn-primary" onclick="clubLogin()">Go to Control Panel →</button>
+    <div class="error" id="club-error"></div>
+  </div>
+
+  <!-- Admin Login -->
+  <div class="tab-panel" id="tab-admin">
+    <div class="field">
+      <label>Admin Password</label>
+      <input type="password" id="admin-password" placeholder="••••••">
+    </div>
+    <button class="btn btn-primary" onclick="adminLogin()">Login as Admin →</button>
+    <div class="error" id="admin-error"></div>
+  </div>
+</div>
+
+<div class="admin-link">
+  <a href="/admin">Admin panel</a>
+</div>
+
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0 && tab === 'club') || (i === 1 && tab === 'admin'));
+  });
+  document.getElementById('tab-club').classList.toggle('active', tab === 'club');
+  document.getElementById('tab-admin').classList.toggle('active', tab === 'admin');
+}
+
+async function clubLogin() {
+  const slug = document.getElementById('club-slug').value.trim().toLowerCase();
+  const password = document.getElementById('club-password').value;
+  const err = document.getElementById('club-error');
+  err.style.display = 'none';
+  try {
+    const res = await fetch('/api/club/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug, password })
+    });
+    const data = await res.json();
+    if (!res.ok) { err.textContent = data.error; err.style.display = 'block'; return; }
+    window.location.href = `/${data.slug}/control`;
+  } catch (e) {
+    err.textContent = 'Connection error. Try again.';
+    err.style.display = 'block';
+  }
+}
+
+async function adminLogin() {
+  const password = document.getElementById('admin-password').value;
+  const err = document.getElementById('admin-error');
+  err.style.display = 'none';
+  try {
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
+    });
+    const data = await res.json();
+    if (!res.ok) { err.textContent = data.error; err.style.display = 'block'; return; }
+    window.location.href = '/admin';
+  } catch (e) {
+    err.textContent = 'Connection error. Try again.';
+    err.style.display = 'block';
+  }
+}
+
+// Enter key support
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const activeTab = document.querySelector('.tab-panel.active').id;
+    if (activeTab === 'tab-club') clubLogin();
+    else adminLogin();
+  }
+});
+</script>
+</body>
+</html>
