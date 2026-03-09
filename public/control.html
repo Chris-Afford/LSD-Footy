@@ -580,12 +580,11 @@
       <div class="card-title">Quarter</div>
     </div>
     <div class="card-body">
-      <div class="quarter-grid">
+      <div class="quarter-grid" style="grid-template-columns:repeat(4,1fr)">
         <button class="btn-quarter active" id="q-1" onclick="setQuarter(1)">Q1</button>
         <button class="btn-quarter" id="q-2" onclick="setQuarter(2)">Q2</button>
         <button class="btn-quarter" id="q-3" onclick="setQuarter(3)">Q3</button>
         <button class="btn-quarter" id="q-4" onclick="setQuarter(4)">Q4</button>
-        <button class="btn-quarter" id="q-5" onclick="setQuarter(5)">ET</button>
       </div>
     </div>
   </div>
@@ -651,38 +650,26 @@
   <!-- Game Settings -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title">Game Settings</div>
+      <div class="card-title">Team Logos</div>
     </div>
     <div class="card-body">
       <div class="settings-grid">
-        <div>
-          <div class="field">
-            <label>Home Team Name</label>
-            <input type="text" id="home-name-input" placeholder="e.g. Sturt">
-          </div>
-          <div class="field" style="margin-top:14px">
-            <label>Home Team Logo</label>
-            <select id="home-logo-select">
-              <option value="">— No logo —</option>
-            </select>
-            <div class="logo-preview" id="home-logo-preview"></div>
-          </div>
+        <div class="field">
+          <label>Home Team Logo</label>
+          <select id="home-logo-select">
+            <option value="">— No logo —</option>
+          </select>
+          <div class="logo-preview" id="home-logo-preview"></div>
         </div>
-        <div>
-          <div class="field">
-            <label>Away Team Name</label>
-            <input type="text" id="away-name-input" placeholder="e.g. Glenelg">
-          </div>
-          <div class="field" style="margin-top:14px">
-            <label>Away Team Logo</label>
-            <select id="away-logo-select">
-              <option value="">— No logo —</option>
-            </select>
-            <div class="logo-preview" id="away-logo-preview"></div>
-          </div>
+        <div class="field">
+          <label>Away Team Logo</label>
+          <select id="away-logo-select">
+            <option value="">— No logo —</option>
+          </select>
+          <div class="logo-preview" id="away-logo-preview"></div>
         </div>
       </div>
-      <button class="btn-apply" onclick="applySettings()">Apply Settings to Scoreboard</button>
+      <button class="btn-apply" onclick="applySettings()">Apply Logos to Scoreboard</button>
       <button class="btn-danger" onclick="resetGame()">⚠ Reset All Scores to Zero</button>
     </div>
   </div>
@@ -690,84 +677,123 @@
 
 <div class="toast" id="toast">Saved</div>
 
-<script type="module">
+<script>
+// ── Bootstrapper — runs on page load ─────────────────────────────────────────
+(async function() {
   const slug = window.location.pathname.split('/')[1];
+  const TOKEN_KEY = 'lsd_token_' + slug;
   let gameState = {};
   let clockInterval = null;
   let localClock = 0;
-  let isRunning = false;
   let logos = [];
+  let db, fbDoc, fbOnSnapshot;
 
-  // ── Auth check ──────────────────────────────────────────────────────────────
-  const authRes = await fetch(`/api/club/check/${slug}`);
-  const { authed } = await authRes.json();
-  if (authed) {
-    document.getElementById('auth-overlay').style.display = 'none';
-    init();
-  } else {
-    document.getElementById('login-title').textContent = slug.toUpperCase();
+  // ── Token helpers ──────────────────────────────────────────────────────────
+  function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
+  function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
+  function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+
+  // ── Auth fetch — sends token with every request ────────────────────────────
+  async function authFetch(url, opts) {
+    opts = opts || {};
+    const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+    const token = getToken();
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const res = await fetch(url, Object.assign({}, opts, { headers }));
+    if (res.status === 401) {
+      clearToken();
+      showLogin();
+    }
+    return res;
   }
 
+  function showLogin() {
+    document.getElementById('login-title').textContent = slug.toUpperCase();
+    document.getElementById('auth-overlay').style.display = 'flex';
+  }
+
+  function hideLogin() {
+    document.getElementById('auth-overlay').style.display = 'none';
+  }
+
+  // ── Login ──────────────────────────────────────────────────────────────────
   window.doLogin = async function() {
     const password = document.getElementById('login-password').value;
     const err = document.getElementById('login-error');
     err.style.display = 'none';
-    const res = await fetch('/api/club/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug, password })
-    });
-    const data = await res.json();
-    if (!res.ok) { err.textContent = data.error; err.style.display = 'block'; return; }
-    document.getElementById('auth-overlay').style.display = 'none';
-    init();
+    try {
+      const res = await fetch('/api/club/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, password })
+      });
+      const data = await res.json();
+      if (!res.ok) { err.textContent = data.error || 'Login failed'; err.style.display = 'block'; return; }
+      if (data.token) setToken(data.token);
+      hideLogin();
+      await init();
+    } catch(e) {
+      err.textContent = 'Connection error: ' + e.message;
+      err.style.display = 'block';
+    }
   };
 
-  document.getElementById('login-password').addEventListener('keydown', e => {
+  document.getElementById('login-password').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') window.doLogin();
   });
 
-  // ── Firebase real-time ──────────────────────────────────────────────────────
-  const cfgRes = await fetch('/api/firebase-config');
-  const firebaseConfig = await cfgRes.json();
-  const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js');
-  const { getFirestore, doc, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js');
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+  // ── Firebase init ──────────────────────────────────────────────────────────
+  async function initFirebase() {
+    const cfgRes = await fetch('/api/firebase-config');
+    const firebaseConfig = await cfgRes.json();
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js');
+    const firestoreModule = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js');
+    fbDoc = firestoreModule.doc;
+    fbOnSnapshot = firestoreModule.onSnapshot;
+    const fbApp = initializeApp(firebaseConfig);
+    db = firestoreModule.getFirestore(fbApp);
+  }
 
+  // ── Main init after login ──────────────────────────────────────────────────
   async function init() {
-    // Load club info
-    const clubRes = await fetch(`/api/club/${slug}`);
+    // Load club info for header + logo dropdowns
+    const clubRes = await fetch('/api/club/' + slug);
+    if (!clubRes.ok) { console.error('Could not load club data'); return; }
     const club = await clubRes.json();
-    document.getElementById('club-name-header').textContent = club.name || slug;
-    document.getElementById('live-link').href = `/${slug}/live`;
+    document.getElementById('club-name-header').textContent = club.name || slug.toUpperCase();
+    document.getElementById('live-link').href = '/' + slug + '/live';
     logos = club.logos || [];
 
-    // Populate logo dropdowns
     const selects = ['home-logo-select', 'away-logo-select'];
-    selects.forEach(id => {
+    selects.forEach(function(id) {
       const sel = document.getElementById(id);
-      logos.forEach(path => {
+      while (sel.options.length > 1) sel.remove(1);
+      logos.forEach(function(p) {
         const opt = document.createElement('option');
-        opt.value = path;
-        opt.textContent = path.split('/').pop().replace(/\.[^.]+$/, '').replace(/-\w{8}$/, '');
+        opt.value = p;
+        opt.textContent = p.split('/').pop()
+          .replace(/\.[^.]+$/, '')
+          .replace(/_[0-9a-f]{8}$/, '')
+          .replace(/_/g, ' ');
         sel.appendChild(opt);
       });
-      sel.addEventListener('change', () => updateLogoPreview(id));
+      sel.addEventListener('change', function() { updateLogoPreview(id); });
     });
 
-    // Listen to game state
-    onSnapshot(doc(db, 'games', slug), snap => {
+    // Start Firebase listener
+    await initFirebase();
+    fbOnSnapshot(fbDoc(db, 'games', slug), function(snap) {
       if (!snap.exists()) return;
       gameState = snap.data();
       renderState(gameState);
     });
   }
 
+  // ── Render game state to control page ─────────────────────────────────────
   function formatClock(s) {
     const m = Math.floor(s / 60);
     const sec = s % 60;
-    return `${m}:${sec.toString().padStart(2,'0')}`;
+    return m + ':' + (sec < 10 ? '0' : '') + sec;
   }
 
   function renderState(s) {
@@ -776,38 +802,30 @@
 
     document.getElementById('home-goals-ctrl').textContent = h.goals || 0;
     document.getElementById('home-behinds-ctrl').textContent = h.behinds || 0;
-    document.getElementById('home-total-ctrl').textContent = (h.goals||0)*6+(h.behinds||0);
+    document.getElementById('home-total-ctrl').textContent = (h.goals||0)*6 + (h.behinds||0);
     document.getElementById('away-goals-ctrl').textContent = a.goals || 0;
     document.getElementById('away-behinds-ctrl').textContent = a.behinds || 0;
-    document.getElementById('away-total-ctrl').textContent = (a.goals||0)*6+(a.behinds||0);
-
-    if (h.name) {
-      document.getElementById('home-label').textContent = h.name.toUpperCase();
-      document.getElementById('home-name-input').value = h.name;
-    }
-    if (a.name) {
-      document.getElementById('away-label').textContent = a.name.toUpperCase();
-      document.getElementById('away-name-input').value = a.name;
-    }
+    document.getElementById('away-total-ctrl').textContent = (a.goals||0)*6 + (a.behinds||0);
 
     // Quarter buttons
-    const q = s.quarter || 1;
-    for (let i = 1; i <= 5; i++) {
-      document.getElementById(`q-${i}`).classList.toggle('active', i === q);
+    var q = s.quarter || 1;
+    for (var i = 1; i <= 4; i++) {
+      var btn = document.getElementById('q-' + i);
+      if (btn) btn.className = 'btn-quarter' + (i === q ? ' active' : '');
     }
 
-    // Logo selects
-    if (h.logo) document.getElementById('home-logo-select').value = h.logo;
-    if (a.logo) document.getElementById('away-logo-select').value = a.logo;
-    updateLogoPreview('home-logo-select');
-    updateLogoPreview('away-logo-select');
+    // Logo selects — update only if changed
+    var homeSel = document.getElementById('home-logo-select');
+    var awaySel = document.getElementById('away-logo-select');
+    if (h.logo && homeSel.value !== h.logo) { homeSel.value = h.logo; updateLogoPreview('home-logo-select'); }
+    if (a.logo && awaySel.value !== a.logo) { awaySel.value = a.logo; updateLogoPreview('away-logo-select'); }
 
     // Clock
     localClock = s.clock || 0;
-    isRunning = s.clockRunning || false;
+    var running = s.clockRunning || false;
     if (clockInterval) clearInterval(clockInterval);
-    if (isRunning) {
-      clockInterval = setInterval(() => {
+    if (running) {
+      clockInterval = setInterval(function() {
         localClock++;
         document.getElementById('clock-display').textContent = formatClock(localClock);
       }, 1000);
@@ -821,38 +839,46 @@
   }
 
   function updateLogoPreview(selectId) {
-    const val = document.getElementById(selectId).value;
-    const previewId = selectId.replace('-select', '-preview');
-    const preview = document.getElementById(previewId);
-    preview.innerHTML = val ? `<img src="${val}" alt="logo">` : '';
+    var val = document.getElementById(selectId).value;
+    var preview = document.getElementById(selectId.replace('-select', '-preview'));
+    preview.innerHTML = val ? '<img src="' + val + '" alt="logo">' : '';
   }
 
   async function patchGame(data) {
-    await fetch(`/api/game/${slug}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
+    try {
+      const res = await authFetch('/api/game/' + slug, {
+        method: 'PATCH',
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(function() { return {}; });
+        showToast((err.error || 'Save failed') + ' — try logging in again', true);
+      }
+    } catch(e) {
+      showToast('Network error: ' + e.message, true);
+    }
   }
 
-  function showToast(msg = 'Saved') {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
+  function showToast(msg, isError) {
+    var t = document.getElementById('toast');
+    t.textContent = msg || 'Saved';
+    t.style.background = isError ? 'rgba(232,25,44,0.15)' : 'rgba(34,197,94,0.15)';
+    t.style.borderColor = isError ? 'rgba(232,25,44,0.3)' : 'rgba(34,197,94,0.3)';
+    t.style.color = isError ? '#e8192c' : '#22c55e';
     t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2000);
+    setTimeout(function() { t.classList.remove('show'); }, 2500);
   }
 
-  // Expose functions to global scope
+  // ── Global button handlers ─────────────────────────────────────────────────
   window.adjust = async function(team, field, delta) {
-    const key = `${team}Team.${field}`;
-    const current = (gameState[`${team}Team`] || {})[field] || 0;
-    const newVal = Math.max(0, current + delta);
-    await patchGame({ [key]: newVal });
+    var current = ((gameState[team + 'Team'] || {})[field]) || 0;
+    var newVal = Math.max(0, current + delta);
+    var patch = {};
+    patch[team + 'Team.' + field] = newVal;
+    await patchGame(patch);
   };
 
-  window.setQuarter = async function(q) {
-    await patchGame({ quarter: q });
-  };
+  window.setQuarter = async function(q) { await patchGame({ quarter: q }); };
 
   window.startClock = async function() {
     await patchGame({ clockRunning: true, clock: localClock });
@@ -870,24 +896,47 @@
 
   window.applySettings = async function() {
     await patchGame({
-      'homeTeam.name': document.getElementById('home-name-input').value.trim(),
       'homeTeam.logo': document.getElementById('home-logo-select').value,
-      'awayTeam.name': document.getElementById('away-name-input').value.trim(),
       'awayTeam.logo': document.getElementById('away-logo-select').value,
     });
-    showToast('Settings applied!');
+    showToast('Logos applied!');
   };
 
   window.resetGame = async function() {
     if (!confirm('Reset all scores to zero? This cannot be undone.')) return;
-    await fetch(`/api/game/${slug}/reset`, { method: 'POST' });
-    showToast('Scores reset');
+    const res = await authFetch('/api/game/' + slug + '/reset', { method: 'POST' });
+    if (res.ok) showToast('Scores reset');
   };
 
   window.logout = async function() {
+    clearToken();
     await fetch('/api/club/logout', { method: 'POST' });
     window.location.href = '/';
   };
+
+  // ── Startup — check session/token then either init or show login ───────────
+  try {
+    // If we have a stored token, go straight to init
+    if (getToken()) {
+      hideLogin();
+      await init();
+    } else {
+      // Check if server session is still alive
+      const authRes = await fetch('/api/club/check/' + slug);
+      const authData = await authRes.json();
+      if (authData.authed) {
+        hideLogin();
+        await init();
+      } else {
+        showLogin();
+      }
+    }
+  } catch(e) {
+    console.error('Startup error:', e);
+    showLogin();
+  }
+
+})();
 </script>
 </body>
 </html>

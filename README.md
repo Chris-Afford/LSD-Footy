@@ -21,6 +21,22 @@ Live AFL scoring system for OBS, LED screens, and web viewing.
 4. Click **Project Settings** (gear icon top left)
 5. Scroll to **Your apps** → click `</>` (web) → register with any name → copy the `firebaseConfig` object values — you'll need them for your `.env`
 
+#### Enable Firebase Storage:
+5. In the Firebase Console left sidebar → **Storage** → Get started → Start in production mode → choose the same region as Firestore
+6. Go to the **Rules** tab in Storage and replace the rules with:
+
+```
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /logos/{allPaths=**} {
+      allow read: if true;   // logos are public
+      allow write: if false; // server-side only
+    }
+  }
+}
+```
+
 #### Get the Admin SDK service account:
 6. In Project Settings → **Service accounts** tab
 7. Click **Generate new private key** → download the JSON file

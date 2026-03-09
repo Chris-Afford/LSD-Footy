@@ -3,8 +3,7 @@ const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const crypto = require('crypto');
 const admin = require('firebase-admin');
 
 const app = express();
@@ -17,11 +16,12 @@ admin.initializeApp({
   storageBucket: process.env.FIREBASE_STORAGE_BUCKET
 });
 const db = admin.firestore();
+const bucket = admin.storage().bucket();
 
 // ── Middleware ─────────────────────────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static('public'));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'lsd-afl-secret-change-me',
   resave: false,
@@ -29,19 +29,33 @@ app.use(session({
   cookie: { secure: false, maxAge: 1000 * 60 * 60 * 24 }
 }));
 
-// Logo uploads – stored in public/logos
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = path.join(__dirname, 'public', 'logos');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
-  }
+// Multer uses memory storage — files go to Firebase Storage, never touch disk
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }
 });
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+
+// ── Upload logo buffer to Firebase Storage, return public URL ─────────────────
+async function uploadLogoToFirebase(fileBuffer, originalName, mimeType) {
+  const ext = originalName.includes('.') ? originalName.split('.').pop().toLowerCase() : 'png';
+  const safeName = originalName
+    .replace(/\.[^.]+$/, '')
+    .replace(/[^a-zA-Z0-9_-]/g, '_')
+    .toLowerCase();
+
+  let filename = `logos/${safeName}.${ext}`;
+  const [exists] = await bucket.file(filename).exists();
+  if (exists) {
+    filename = `logos/${safeName}_${crypto.randomBytes(4).toString('hex')}.${ext}`;
+  }
+
+  await bucket.file(filename).save(fileBuffer, {
+    metadata: { contentType: mimeType || 'image/png' },
+    public: true,
+  });
+
+  return `https://storage.googleapis.com/${bucket.name}/${filename}`;
+}
 
 // ── Auth helpers ───────────────────────────────────────────────────────────────
 function requireAdmin(req, res, next) {
@@ -49,29 +63,36 @@ function requireAdmin(req, res, next) {
   return res.status(401).json({ error: 'Admin login required' });
 }
 
+const clubTokens = new Map();
+
 function requireClub(req, res, next) {
   const slug = req.params.slug;
   if (req.session && req.session.clubSlug === slug) return next();
+  const token = (req.headers['authorization'] || '').replace('Bearer ', '').trim();
+  if (token && clubTokens.get(slug) === token) {
+    req.session.clubSlug = slug;
+    return next();
+  }
   return res.status(401).json({ error: 'Club login required' });
 }
 
 // ── Serve HTML pages ───────────────────────────────────────────────────────────
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html')));
-
-app.get('/:slug/live', (req, res) => res.sendFile(path.join(__dirname, 'public', 'live.html')));
-app.get('/:slug/control', (req, res) => res.sendFile(path.join(__dirname, 'public', 'control.html')));
+app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
+app.get('/admin', (req, res) => res.sendFile(__dirname + '/public/admin/index.html'));
+app.get('/:slug/live', (req, res) => res.sendFile(__dirname + '/public/live.html'));
+app.get('/:slug/control', (req, res) => res.sendFile(__dirname + '/public/control.html'));
 
 // ── Admin Auth ─────────────────────────────────────────────────────────────────
 app.post('/api/admin/login', async (req, res) => {
   const { password } = req.body;
   const adminHash = process.env.ADMIN_PASSWORD_HASH;
   if (!adminHash) {
-    // First run: any password sets the admin password
     const hash = await bcrypt.hash(password, 10);
-    console.log('FIRST RUN - Set this as ADMIN_PASSWORD_HASH in your .env:\n' + hash);
-    req.session.isAdmin = true;
-    return res.json({ ok: true, firstRun: true, hash });
+    return res.status(403).json({
+      error: 'ADMIN_PASSWORD_HASH not set in environment variables.',
+      hash,
+      instructions: 'Copy the hash and add it as ADMIN_PASSWORD_HASH in Render env vars, then redeploy.'
+    });
   }
   const ok = await bcrypt.compare(password, adminHash);
   if (!ok) return res.status(401).json({ error: 'Wrong password' });
@@ -79,11 +100,7 @@ app.post('/api/admin/login', async (req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/api/admin/logout', (req, res) => {
-  req.session.destroy();
-  res.json({ ok: true });
-});
-
+app.post('/api/admin/logout', (req, res) => { req.session.destroy(); res.json({ ok: true }); });
 app.get('/api/admin/check', (req, res) => {
   res.json({ isAdmin: !!(req.session && req.session.isAdmin) });
 });
@@ -93,63 +110,46 @@ app.post('/api/club/login', async (req, res) => {
   const { slug, password } = req.body;
   const doc = await db.collection('clubs').doc(slug).get();
   if (!doc.exists) return res.status(404).json({ error: 'Club not found' });
-  const club = doc.data();
-  const ok = await bcrypt.compare(password, club.passwordHash);
+  const ok = await bcrypt.compare(password, doc.data().passwordHash);
   if (!ok) return res.status(401).json({ error: 'Wrong password' });
   req.session.clubSlug = slug;
-  res.json({ ok: true, slug });
+  const token = crypto.randomBytes(32).toString('hex');
+  clubTokens.set(slug, token);
+  res.json({ ok: true, slug, token });
 });
 
-app.post('/api/club/logout', (req, res) => {
-  req.session.clubSlug = null;
-  res.json({ ok: true });
-});
-
+app.post('/api/club/logout', (req, res) => { req.session.clubSlug = null; res.json({ ok: true }); });
 app.get('/api/club/check/:slug', (req, res) => {
-  res.json({ authed: req.session && req.session.clubSlug === req.params.slug });
+  res.json({ authed: !!(req.session && req.session.clubSlug === req.params.slug) });
 });
 
 // ── Admin: Club management ─────────────────────────────────────────────────────
 app.get('/api/admin/clubs', requireAdmin, async (req, res) => {
   const snap = await db.collection('clubs').get();
-  const clubs = snap.docs.map(d => ({ slug: d.id, ...d.data(), passwordHash: undefined }));
-  res.json(clubs);
+  res.json(snap.docs.map(d => ({ slug: d.id, ...d.data(), passwordHash: undefined })));
 });
 
-app.post('/api/admin/clubs', requireAdmin, upload.fields([
-  { name: 'logos', maxCount: 20 }
-]), async (req, res) => {
+app.post('/api/admin/clubs', requireAdmin, upload.array('logos', 20), async (req, res) => {
   try {
     const { slug, name, password } = req.body;
     const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '-');
     const existing = await db.collection('clubs').doc(cleanSlug).get();
     if (existing.exists) return res.status(400).json({ error: 'Club slug already exists' });
-    const passwordHash = await bcrypt.hash(password, 10);
 
-    // Handle uploaded logos
+    const passwordHash = await bcrypt.hash(password, 10);
     const logos = [];
-    if (req.files && req.files.logos) {
-      for (const file of req.files.logos) {
-        logos.push(`/logos/${file.filename}`);
-      }
+    for (const file of (req.files || [])) {
+      logos.push(await uploadLogoToFirebase(file.buffer, file.originalname, file.mimetype));
     }
 
     await db.collection('clubs').doc(cleanSlug).set({
-      name,
-      slug: cleanSlug,
-      passwordHash,
-      logos,
+      name, slug: cleanSlug, passwordHash, logos,
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
-
-    // Create initial game state
     await db.collection('games').doc(cleanSlug).set({
-      homeTeam: { name: '', logo: '', goals: 0, behinds: 0 },
-      awayTeam: { name: '', logo: '', goals: 0, behinds: 0 },
-      quarter: 1,
-      clock: 0,
-      clockRunning: false,
-      lastClockUpdate: null
+      homeTeam: { logo: '', goals: 0, behinds: 0 },
+      awayTeam: { logo: '', goals: 0, behinds: 0 },
+      quarter: 1, clock: 0, clockRunning: false
     });
 
     res.json({ ok: true, slug: cleanSlug });
@@ -160,29 +160,36 @@ app.post('/api/admin/clubs', requireAdmin, upload.fields([
 });
 
 app.delete('/api/admin/clubs/:slug', requireAdmin, async (req, res) => {
-  const { slug } = req.params;
-  await db.collection('clubs').doc(slug).delete();
-  await db.collection('games').doc(slug).delete();
+  await db.collection('clubs').doc(req.params.slug).delete();
+  await db.collection('games').doc(req.params.slug).delete();
   res.json({ ok: true });
 });
 
 app.post('/api/admin/clubs/:slug/upload-logo', requireAdmin, upload.single('logo'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-  const logoPath = `/logos/${req.file.filename}`;
-  await db.collection('clubs').doc(req.params.slug).update({
-    logos: admin.firestore.FieldValue.arrayUnion(logoPath)
-  });
-  res.json({ ok: true, path: logoPath });
+  try {
+    const url = await uploadLogoToFirebase(req.file.buffer, req.file.originalname, req.file.mimetype);
+    await db.collection('clubs').doc(req.params.slug).update({
+      logos: admin.firestore.FieldValue.arrayUnion(url)
+    });
+    res.json({ ok: true, url });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.delete('/api/admin/clubs/:slug/logo', requireAdmin, async (req, res) => {
-  const { logoPath } = req.body;
+  const { logoUrl } = req.body;
   await db.collection('clubs').doc(req.params.slug).update({
-    logos: admin.firestore.FieldValue.arrayRemove(logoPath)
+    logos: admin.firestore.FieldValue.arrayRemove(logoUrl)
   });
-  // Delete file from disk
-  const fullPath = path.join(__dirname, 'public', logoPath);
-  if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+  try {
+    const urlPath = decodeURIComponent(new URL(logoUrl).pathname);
+    const storagePath = urlPath.replace(`/${bucket.name}/`, '');
+    await bucket.file(storagePath).delete();
+  } catch (e) {
+    console.warn('Storage delete skipped:', e.message);
+  }
   res.json({ ok: true });
 });
 
@@ -190,8 +197,8 @@ app.delete('/api/admin/clubs/:slug/logo', requireAdmin, async (req, res) => {
 app.get('/api/club/:slug', async (req, res) => {
   const doc = await db.collection('clubs').doc(req.params.slug).get();
   if (!doc.exists) return res.status(404).json({ error: 'Club not found' });
-  const data = doc.data();
-  res.json({ slug: doc.id, name: data.name, logos: data.logos || [] });
+  const d = doc.data();
+  res.json({ slug: doc.id, name: d.name, logos: d.logos || [] });
 });
 
 // ── Game state ─────────────────────────────────────────────────────────────────
@@ -210,22 +217,20 @@ app.patch('/api/game/:slug', requireClub, async (req, res) => {
   }
 });
 
-// Reset game scores
 app.post('/api/game/:slug/reset', requireClub, async (req, res) => {
-  await db.collection('games').doc(req.params.slug).update({
-    'homeTeam.goals': 0,
-    'homeTeam.behinds': 0,
-    'awayTeam.goals': 0,
-    'awayTeam.behinds': 0,
-    quarter: 1,
-    clock: 0,
-    clockRunning: false,
-    lastClockUpdate: null
-  });
-  res.json({ ok: true });
+  try {
+    await db.collection('games').doc(req.params.slug).update({
+      'homeTeam.goals': 0, 'homeTeam.behinds': 0,
+      'awayTeam.goals': 0, 'awayTeam.behinds': 0,
+      quarter: 1, clock: 0, clockRunning: false
+    });
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
-// Firebase config for client
+// ── Firebase client config ─────────────────────────────────────────────────────
 app.get('/api/firebase-config', (req, res) => {
   res.json({
     apiKey: process.env.FIREBASE_API_KEY,

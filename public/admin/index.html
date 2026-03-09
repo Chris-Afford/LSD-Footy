@@ -417,7 +417,7 @@
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 36px;
-    width: 340px;
+    width: 480px;
     text-align: center;
   }
 
@@ -454,7 +454,7 @@
     cursor: pointer;
   }
 
-  .login-error { color: var(--red); font-size: 13px; margin-top: 10px; display: none; }
+  .login-error { font-size: 13px; margin-top: 14px; display: none; }
 
   .toast {
     position: fixed;
@@ -484,8 +484,11 @@
   <div class="login-box">
     <h2>Admin Login</h2>
     <p>LiveSourceData – AFL Scoreboard</p>
-    <input type="password" id="admin-pw" placeholder="••••••">
-    <button class="btn-primary-full" onclick="doAdminLogin()">Login →</button>
+    <input type="password" id="admin-pw" placeholder="Enter password">
+    <div style="display:flex;gap:8px;margin-top:0">
+      <button class="btn-primary-full" onclick="doAdminLogin()" style="flex:1">Login →</button>
+      <button class="btn-primary-full" onclick="generateHash()" style="flex:1;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.15)" title="Use this the first time to get your password hash for Render">Get Hash</button>
+    </div>
     <div class="login-error" id="login-err"></div>
   </div>
 </div>
@@ -566,6 +569,44 @@ async function checkAuth() {
   }
 }
 
+async function generateHash() {
+  const pw = document.getElementById('admin-pw').value;
+  const err = document.getElementById('login-err');
+  if (!pw) { err.style.color = 'var(--red)'; err.textContent = 'Enter a password first.'; err.style.display = 'block'; return; }
+  const res = await fetch('/api/admin/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: pw })
+  });
+  const data = await res.json();
+  if (data.hash) {
+    err.style.color = 'white';
+    err.innerHTML = '<strong style="color:#f5c800">Step 1 done!</strong> Copy this hash, go to Render → Environment → add variable <code>ADMIN_PASSWORD_HASH</code> with this value, then redeploy:'
+      + '<div style="position:relative;margin-top:10px">'
+      + '<code id="hash-code" style="word-break:break-all;font-size:10px;background:rgba(255,255,255,0.07);padding:8px 36px 8px 8px;border-radius:4px;display:block;line-height:1.5;color:#e8e4dc">' + data.hash + '</code>'
+      + '<button onclick="copyHash()" style="position:absolute;top:6px;right:6px;background:rgba(245,200,0,0.15);border:1px solid rgba(245,200,0,0.3);color:#f5c800;border-radius:3px;padding:2px 8px;font-size:11px;cursor:pointer;font-family:Barlow Condensed,sans-serif;font-weight:700">COPY</button>'
+      + '</div>'
+      + '<p style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:8px">After redeploying, come back and use <strong>Login</strong> with the same password.</p>';
+    err.style.display = 'block';
+  } else {
+    err.style.color = 'var(--red)';
+    err.textContent = data.error || 'Error generating hash.';
+    err.style.display = 'block';
+  }
+}
+
+function copyHash() {
+  const hash = document.getElementById('hash-code').textContent;
+  navigator.clipboard.writeText(hash).then(() => {
+    const btn = event.target;
+    btn.textContent = 'COPIED!';
+    btn.style.background = 'rgba(34,197,94,0.2)';
+    btn.style.borderColor = 'rgba(34,197,94,0.4)';
+    btn.style.color = '#22c55e';
+    setTimeout(() => { btn.textContent = 'COPY'; btn.style.background = ''; btn.style.borderColor = ''; btn.style.color = '#f5c800'; }, 2000);
+  });
+}
+
 async function doAdminLogin() {
   const pw = document.getElementById('admin-pw').value;
   const err = document.getElementById('login-err');
@@ -576,10 +617,13 @@ async function doAdminLogin() {
     body: JSON.stringify({ password: pw })
   });
   const data = await res.json();
-  if (!res.ok) { err.textContent = data.error; err.style.display = 'block'; return; }
-  if (data.firstRun) {
-    alert(`First run! Your admin password hash is:\n\n${data.hash}\n\nAdd this as ADMIN_PASSWORD_HASH in your .env file on Render.`);
+  if (res.status === 403) {
+    err.style.color = 'var(--red)';
+    err.textContent = 'ADMIN_PASSWORD_HASH not set in Render yet. Click "Get Hash" to generate it.';
+    err.style.display = 'block';
+    return;
   }
+  if (!res.ok) { err.style.color = 'var(--red)'; err.textContent = data.error; err.style.display = 'block'; return; }
   document.getElementById('auth-overlay').style.display = 'none';
   loadClubs();
 }
