@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Live Scoreboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -12,24 +12,23 @@
     width: 1920px;
     height: 1080px;
     overflow: hidden;
-    background: #000000;
-    color: #ffffff;
+    background: #000;
+    color: #fff;
     font-family: 'Barlow Condensed', sans-serif;
   }
 
-  /* Full canvas layout */
   .scoreboard {
     width: 1920px;
     height: 1080px;
     position: relative;
     display: flex;
     flex-direction: column;
-    align-items: center;
     justify-content: center;
-    background: #000000;
+    padding: 0 80px;
+    gap: 0;
   }
 
-  /* Subtle top accent */
+  /* Top accent bar */
   .top-bar {
     position: absolute;
     top: 0; left: 0; right: 0;
@@ -40,15 +39,15 @@
   /* Quarter + Clock row */
   .meta-row {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     justify-content: center;
-    gap: 60px;
-    margin-bottom: 60px;
+    gap: 48px;
+    margin-bottom: 36px;
   }
 
   .quarter-display {
     font-weight: 800;
-    font-size: 80px;
+    font-size: 100px;
     color: #f5c800;
     letter-spacing: 0.04em;
     line-height: 1;
@@ -56,24 +55,23 @@
 
   .clock-display {
     font-weight: 900;
-    font-size: 120px;
+    font-size: 140px;
     color: #f5c800;
     letter-spacing: 0.02em;
     line-height: 1;
     font-variant-numeric: tabular-nums;
-    min-width: 280px;
-    text-align: center;
+    min-width: 320px;
+    text-align: left;
   }
 
-  /* Teams row */
-  .teams-row {
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
-    width: 100%;
-    padding: 0 120px;
+  /* Divider between teams */
+  .team-divider {
+    height: 3px;
+    background: rgba(255,255,255,0.1);
+    margin: 18px 0;
   }
 
+  /* Each team row: logo | scores pushed right */
   .team-row {
     display: flex;
     align-items: center;
@@ -81,148 +79,105 @@
   }
 
   .team-logo {
-    width: 200px;
-    height: 200px;
+    width: 220px;
+    height: 220px;
     object-fit: contain;
     flex-shrink: 0;
-    filter: drop-shadow(0 4px 20px rgba(0,0,0,0.6));
+    filter: drop-shadow(0 4px 24px rgba(0,0,0,0.7));
   }
 
   .team-logo-placeholder {
-    width: 200px;
-    height: 200px;
+    width: 220px;
+    height: 220px;
     flex-shrink: 0;
-    background: rgba(255,255,255,0.06);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    color: rgba(255,255,255,0.2);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
   }
 
-  .team-name {
-    font-weight: 900;
-    font-size: 100px;
-    text-transform: uppercase;
-    letter-spacing: -0.01em;
-    line-height: 1;
-    flex: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    color: #ffffff;
-  }
-
+  /* Score numbers fill remaining space */
   .score-group {
     display: flex;
     align-items: center;
-    gap: 30px;
-    flex-shrink: 0;
+    flex: 1;
+    justify-content: flex-end;
+    gap: 0;
   }
 
   .score-goals {
     font-weight: 900;
-    font-size: 200px;
-    line-height: 1;
-    color: #ffffff;
+    font-size: 260px;
+    line-height: 0.9;
+    color: #fff;
     font-variant-numeric: tabular-nums;
-    min-width: 220px;
+    min-width: 300px;
     text-align: right;
   }
 
-  .score-dot {
-    font-size: 100px;
-    color: rgba(255,255,255,0.25);
-    line-height: 1;
-    margin-bottom: 10px;
+  .score-sep {
+    font-size: 180px;
+    color: rgba(255,255,255,0.2);
+    line-height: 0.9;
+    padding: 0 20px;
+    font-weight: 300;
   }
 
   .score-behinds {
     font-weight: 900;
-    font-size: 200px;
-    line-height: 1;
-    color: #ffffff;
+    font-size: 260px;
+    line-height: 0.9;
+    color: #fff;
     font-variant-numeric: tabular-nums;
-    min-width: 220px;
+    min-width: 300px;
     text-align: center;
   }
 
   .score-total-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-width: 260px;
-  }
-
-  .score-total-label {
-    font-size: 24px;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.3);
-    margin-bottom: 4px;
+    min-width: 340px;
+    text-align: right;
+    border-left: 3px solid rgba(255,255,255,0.12);
+    margin-left: 30px;
+    padding-left: 40px;
   }
 
   .score-total {
     font-weight: 900;
-    font-size: 200px;
-    line-height: 1;
-    color: #ffffff;
+    font-size: 260px;
+    line-height: 0.9;
+    color: #fff;
     font-variant-numeric: tabular-nums;
   }
 
-  /* Divider between teams */
-  .team-divider {
-    height: 2px;
-    background: rgba(255,255,255,0.08);
-    margin: 0 120px;
+  /* Score bump animation */
+  @keyframes bump {
+    0%   { transform: scale(1);    color: #fff; }
+    40%  { transform: scale(1.1);  color: #f5c800; }
+    100% { transform: scale(1);    color: #fff; }
   }
+  .score-bump { animation: bump 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
-  /* LSD watermark */
+  /* Watermark */
   .watermark {
     position: absolute;
-    bottom: 30px;
-    right: 50px;
+    bottom: 28px;
+    right: 48px;
     display: flex;
     align-items: center;
     gap: 6px;
-    opacity: 0.5;
+    opacity: 0.45;
   }
-
   .watermark-live {
     background: #e8192c;
-    color: white;
+    color: #fff;
     font-weight: 800;
-    font-size: 14px;
-    padding: 2px 6px;
+    font-size: 16px;
+    padding: 3px 7px;
     border-radius: 2px;
-  }
-
-  .watermark-text {
-    font-size: 14px;
-    font-weight: 600;
     letter-spacing: 0.05em;
-    color: rgba(255,255,255,0.6);
+  }
+  .watermark-text {
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: rgba(255,255,255,0.7);
     text-transform: uppercase;
-  }
-
-  /* Transition for score changes */
-  .score-goals, .score-behinds, .score-total {
-    transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .score-bump {
-    animation: bump 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  @keyframes bump {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.12); color: #f5c800; }
-    100% { transform: scale(1); }
   }
 </style>
 </head>
@@ -236,38 +191,29 @@
     <div class="clock-display" id="clock-display">0:00</div>
   </div>
 
-  <!-- Home Team -->
-  <div class="teams-row">
-    <div class="team-row">
-      <div id="home-logo-wrap">
-        <div class="team-logo-placeholder">Home</div>
-      </div>
-      <div class="team-name" id="home-name">Home Team</div>
-      <div class="score-group">
-        <div class="score-goals" id="home-goals">0</div>
-        <div class="score-dot">·</div>
-        <div class="score-behinds" id="home-behinds">0</div>
-        <div class="score-total-wrap">
-          <div class="score-total" id="home-total">0</div>
-        </div>
+  <!-- Teams -->
+  <div id="home-team-row" class="team-row">
+    <div id="home-logo-wrap"><div class="team-logo-placeholder"></div></div>
+    <div class="score-group">
+      <div class="score-goals"   id="home-goals">0</div>
+      <div class="score-sep">.</div>
+      <div class="score-behinds" id="home-behinds">0</div>
+      <div class="score-total-wrap">
+        <div class="score-total" id="home-total">0</div>
       </div>
     </div>
+  </div>
 
-    <div class="team-divider"></div>
+  <div class="team-divider"></div>
 
-    <!-- Away Team -->
-    <div class="team-row">
-      <div id="away-logo-wrap">
-        <div class="team-logo-placeholder">Away</div>
-      </div>
-      <div class="team-name" id="away-name">Away Team</div>
-      <div class="score-group">
-        <div class="score-goals" id="away-goals">0</div>
-        <div class="score-dot">·</div>
-        <div class="score-behinds" id="away-behinds">0</div>
-        <div class="score-total-wrap">
-          <div class="score-total" id="away-total">0</div>
-        </div>
+  <div id="away-team-row" class="team-row">
+    <div id="away-logo-wrap"><div class="team-logo-placeholder"></div></div>
+    <div class="score-group">
+      <div class="score-goals"   id="away-goals">0</div>
+      <div class="score-sep">.</div>
+      <div class="score-behinds" id="away-behinds">0</div>
+      <div class="score-total-wrap">
+        <div class="score-total" id="away-total">0</div>
       </div>
     </div>
   </div>
@@ -278,92 +224,68 @@
   </div>
 </div>
 
-<!-- Firebase SDK -->
-<script type="module">
+<script>
+(async function() {
   const slug = window.location.pathname.split('/')[1];
-
-  // Load firebase config from server
-  const cfgRes = await fetch('/api/firebase-config');
-  const firebaseConfig = await cfgRes.json();
-
-  const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js');
-  const { getFirestore, doc, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js');
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  // Clock management
   let clockInterval = null;
   let localClock = 0;
-  let clockRunning = false;
-  let lastServerClock = 0;
+  let prev = {};
 
-  function formatClock(seconds) {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
+  function formatClock(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return m + ':' + (sec < 10 ? '0' : '') + sec;
   }
 
-  function setLogo(wrapId, url, fallbackText) {
+  function setLogo(wrapId, url) {
     const wrap = document.getElementById(wrapId);
     if (url) {
-      wrap.innerHTML = `<img class="team-logo" src="${url}" alt="${fallbackText}" onerror="this.parentElement.innerHTML='<div class=team-logo-placeholder>${fallbackText}</div>'">`;
+      wrap.innerHTML = '<img class="team-logo" src="' + url + '" alt="">';
     } else {
-      wrap.innerHTML = `<div class="team-logo-placeholder">${fallbackText}</div>`;
+      wrap.innerHTML = '<div class="team-logo-placeholder"></div>';
     }
   }
 
   function bump(el) {
     el.classList.remove('score-bump');
-    void el.offsetWidth; // reflow
+    void el.offsetWidth;
     el.classList.add('score-bump');
   }
-
-  let prev = {};
 
   function update(data) {
     const h = data.homeTeam || {};
     const a = data.awayTeam || {};
 
     // Quarter
-    const qEl = document.getElementById('quarter-display');
-    const q = data.quarter || 1;
-    const qLabels = ['Q1','Q2','Q3','Q4','ET'];
-    qEl.textContent = qLabels[Math.min(q - 1, 4)];
-
-    // Team names
-    document.getElementById('home-name').textContent = h.name || 'Home';
-    document.getElementById('away-name').textContent = a.name || 'Away';
+    var qLabels = ['Q1','Q2','Q3','Q4'];
+    var q = Math.min((data.quarter || 1) - 1, 3);
+    document.getElementById('quarter-display').textContent = qLabels[q];
 
     // Logos
-    setLogo('home-logo-wrap', h.logo, h.name || 'Home');
-    setLogo('away-logo-wrap', a.logo, a.name || 'Away');
+    setLogo('home-logo-wrap', h.logo || '');
+    setLogo('away-logo-wrap', a.logo || '');
 
-    // Scores with bump animation
-    const fields = [
-      ['home-goals', h.goals || 0],
+    // Scores with bump
+    var fields = [
+      ['home-goals',   h.goals   || 0],
       ['home-behinds', h.behinds || 0],
-      ['home-total', (h.goals || 0) * 6 + (h.behinds || 0)],
-      ['away-goals', a.goals || 0],
+      ['home-total',   (h.goals||0)*6 + (h.behinds||0)],
+      ['away-goals',   a.goals   || 0],
       ['away-behinds', a.behinds || 0],
-      ['away-total', (a.goals || 0) * 6 + (a.behinds || 0)],
+      ['away-total',   (a.goals||0)*6 + (a.behinds||0)],
     ];
-
-    fields.forEach(([id, val]) => {
-      const el = document.getElementById(id);
-      if (prev[id] !== undefined && prev[id] !== val) bump(el);
-      el.textContent = val;
-      prev[id] = val;
+    fields.forEach(function(f) {
+      var el = document.getElementById(f[0]);
+      if (prev[f[0]] !== undefined && prev[f[0]] !== f[1]) bump(el);
+      el.textContent = f[1];
+      prev[f[0]] = f[1];
     });
 
     // Clock
-    lastServerClock = data.clock || 0;
-    clockRunning = data.clockRunning || false;
-    localClock = lastServerClock;
-
+    localClock = data.clock || 0;
     if (clockInterval) clearInterval(clockInterval);
-    if (clockRunning) {
-      clockInterval = setInterval(() => {
+    if (data.clockRunning) {
+      clockInterval = setInterval(function() {
         localClock++;
         document.getElementById('clock-display').textContent = formatClock(localClock);
       }, 1000);
@@ -371,10 +293,16 @@
     document.getElementById('clock-display').textContent = formatClock(localClock);
   }
 
-  // Real-time listener
-  onSnapshot(doc(db, 'games', slug), snap => {
+  // Init Firebase
+  const cfgRes = await fetch('/api/firebase-config');
+  const firebaseConfig = await cfgRes.json();
+  const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js');
+  const { getFirestore, doc, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js');
+  const db = getFirestore(initializeApp(firebaseConfig));
+  onSnapshot(doc(db, 'games', slug), function(snap) {
     if (snap.exists()) update(snap.data());
   });
+})();
 </script>
 </body>
 </html>

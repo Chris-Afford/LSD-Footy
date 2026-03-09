@@ -12,8 +12,6 @@
   :root {
     --red: #e8192c;
     --yellow: #f5c800;
-    --white: #ffffff;
-    --off-white: #e8e4dc;
     --dark: #0a0a0a;
     --mid: #1a1a1a;
     --border: rgba(255,255,255,0.08);
@@ -21,17 +19,15 @@
 
   body {
     background: var(--dark);
-    color: var(--white);
+    color: #fff;
     font-family: 'Barlow', sans-serif;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
   }
 
-  /* Grid background */
   body::before {
     content: '';
     position: fixed;
@@ -43,7 +39,6 @@
     pointer-events: none;
   }
 
-  /* Red accent bar */
   body::after {
     content: '';
     position: fixed;
@@ -54,7 +49,7 @@
 
   .brand {
     text-align: center;
-    margin-bottom: 48px;
+    margin-bottom: 40px;
   }
 
   .brand-tag {
@@ -70,7 +65,7 @@
     text-transform: uppercase;
     padding: 4px 10px;
     border-radius: 2px;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
 
   .brand-tag::before {
@@ -79,10 +74,7 @@
     animation: pulse 1.5s ease-in-out infinite;
   }
 
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
   .brand h1 {
     font-family: 'Barlow Condensed', sans-serif;
@@ -97,9 +89,9 @@
 
   .brand p {
     margin-top: 10px;
-    color: rgba(255,255,255,0.4);
-    font-size: 14px;
-    letter-spacing: 0.05em;
+    color: rgba(255,255,255,0.35);
+    font-size: 13px;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
   }
 
@@ -107,20 +99,19 @@
     background: var(--mid);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 40px;
+    padding: 36px;
     width: 100%;
-    max-width: 420px;
-    position: relative;
+    max-width: 400px;
   }
 
   .card-title {
     font-family: 'Barlow Condensed', sans-serif;
     font-weight: 700;
-    font-size: 20px;
+    font-size: 18px;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 28px;
-    color: var(--off-white);
+    letter-spacing: 0.06em;
+    margin-bottom: 24px;
+    color: rgba(255,255,255,0.8);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -130,14 +121,12 @@
     content: '';
     display: block;
     width: 4px;
-    height: 20px;
+    height: 18px;
     background: var(--yellow);
     border-radius: 2px;
   }
 
-  .field {
-    margin-bottom: 18px;
-  }
+  .field { margin-bottom: 16px; }
 
   label {
     display: block;
@@ -145,7 +134,7 @@
     font-weight: 600;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.4);
+    color: rgba(255,255,255,0.35);
     margin-bottom: 8px;
   }
 
@@ -158,14 +147,11 @@
     color: white;
     font-family: 'Barlow', sans-serif;
     font-size: 15px;
-    transition: border-color 0.2s, background 0.2s;
+    transition: border-color 0.2s;
     outline: none;
   }
 
-  input:focus {
-    border-color: var(--yellow);
-    background: rgba(255,255,255,0.08);
-  }
+  input:focus { border-color: var(--yellow); }
 
   .btn {
     width: 100%;
@@ -178,18 +164,14 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     cursor: pointer;
-    transition: transform 0.1s, opacity 0.2s;
-    margin-top: 8px;
-  }
-
-  .btn:active { transform: scale(0.98); }
-
-  .btn-primary {
     background: var(--yellow);
-    color: var(--dark);
+    color: #000;
+    transition: opacity 0.15s;
+    margin-top: 4px;
   }
 
-  .btn-primary:hover { opacity: 0.9; }
+  .btn:hover { opacity: 0.9; }
+  .btn:active { transform: scale(0.98); }
 
   .error {
     color: var(--red);
@@ -198,77 +180,22 @@
     display: none;
   }
 
-  .divider {
-    text-align: center;
-    margin: 32px 0;
-    color: rgba(255,255,255,0.15);
-    font-size: 12px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    position: relative;
-  }
-
-  .divider::before, .divider::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    width: 40%;
-    height: 1px;
-    background: rgba(255,255,255,0.08);
-  }
-
-  .divider::before { left: 0; }
-  .divider::after { right: 0; }
-
   .admin-link {
     text-align: center;
-    margin-top: 24px;
-    font-size: 13px;
-    color: rgba(255,255,255,0.3);
+    margin-top: 20px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.2);
+    letter-spacing: 0.04em;
   }
 
   .admin-link a {
-    color: rgba(255,255,255,0.5);
+    color: rgba(255,255,255,0.35);
     text-decoration: none;
-    border-bottom: 1px solid rgba(255,255,255,0.2);
+    border-bottom: 1px solid rgba(255,255,255,0.15);
     transition: color 0.2s;
   }
 
-  .admin-link a:hover { color: white; }
-
-  .tabs {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 28px;
-    background: rgba(255,255,255,0.04);
-    border-radius: 6px;
-    padding: 4px;
-  }
-
-  .tab {
-    flex: 1;
-    padding: 8px;
-    text-align: center;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 700;
-    font-size: 13px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    cursor: pointer;
-    border-radius: 4px;
-    color: rgba(255,255,255,0.4);
-    transition: all 0.2s;
-    border: none;
-    background: transparent;
-  }
-
-  .tab.active {
-    background: var(--red);
-    color: white;
-  }
-
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
+  .admin-link a:hover { color: rgba(255,255,255,0.6); }
 </style>
 </head>
 <body>
@@ -280,34 +207,17 @@
 </div>
 
 <div class="card">
-  <div class="tabs">
-    <button class="tab active" onclick="switchTab('club')">Club Login</button>
-    <button class="tab" onclick="switchTab('admin')">Admin</button>
+  <div class="card-title">Club Login</div>
+  <div class="field">
+    <label>Club</label>
+    <input type="text" id="club-slug" placeholder="e.g. sturt" autocomplete="off">
   </div>
-
-  <!-- Club Login -->
-  <div class="tab-panel active" id="tab-club">
-    <div class="field">
-      <label>Club Name / Slug</label>
-      <input type="text" id="club-slug" placeholder="e.g. sturt" autocomplete="off">
-    </div>
-    <div class="field">
-      <label>Access Code</label>
-      <input type="password" id="club-password" placeholder="••••••">
-    </div>
-    <button class="btn btn-primary" onclick="clubLogin()">Go to Control Panel →</button>
-    <div class="error" id="club-error"></div>
+  <div class="field">
+    <label>Access Code</label>
+    <input type="password" id="club-password" placeholder="••••••">
   </div>
-
-  <!-- Admin Login -->
-  <div class="tab-panel" id="tab-admin">
-    <div class="field">
-      <label>Admin Password</label>
-      <input type="password" id="admin-password" placeholder="••••••">
-    </div>
-    <button class="btn btn-primary" onclick="adminLogin()">Login as Admin →</button>
-    <div class="error" id="admin-error"></div>
-  </div>
+  <button class="btn" onclick="clubLogin()">Go to Control Panel →</button>
+  <div class="error" id="club-error"></div>
 </div>
 
 <div class="admin-link">
@@ -315,14 +225,6 @@
 </div>
 
 <script>
-function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach((t, i) => {
-    t.classList.toggle('active', (i === 0 && tab === 'club') || (i === 1 && tab === 'admin'));
-  });
-  document.getElementById('tab-club').classList.toggle('active', tab === 'club');
-  document.getElementById('tab-admin').classList.toggle('active', tab === 'admin');
-}
-
 async function clubLogin() {
   const slug = document.getElementById('club-slug').value.trim().toLowerCase();
   const password = document.getElementById('club-password').value;
@@ -336,39 +238,16 @@ async function clubLogin() {
     });
     const data = await res.json();
     if (!res.ok) { err.textContent = data.error; err.style.display = 'block'; return; }
-    window.location.href = `/${data.slug}/control`;
-  } catch (e) {
+    if (data.token) localStorage.setItem('lsd_token_' + data.slug, data.token);
+    window.location.href = '/' + data.slug + '/control';
+  } catch(e) {
     err.textContent = 'Connection error. Try again.';
     err.style.display = 'block';
   }
 }
 
-async function adminLogin() {
-  const password = document.getElementById('admin-password').value;
-  const err = document.getElementById('admin-error');
-  err.style.display = 'none';
-  try {
-    const res = await fetch('/api/admin/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password })
-    });
-    const data = await res.json();
-    if (!res.ok) { err.textContent = data.error; err.style.display = 'block'; return; }
-    window.location.href = '/admin';
-  } catch (e) {
-    err.textContent = 'Connection error. Try again.';
-    err.style.display = 'block';
-  }
-}
-
-// Enter key support
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    const activeTab = document.querySelector('.tab-panel.active').id;
-    if (activeTab === 'tab-club') clubLogin();
-    else adminLogin();
-  }
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') clubLogin();
 });
 </script>
 </body>
